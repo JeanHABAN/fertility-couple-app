@@ -48,9 +48,11 @@ export type TimelineItem = {
 };
 
 type CycleContextValue = {
-  // settings + cycle calculations
+  // current cycle settings (goal, lengths, etc.)
   settings: CycleSettings;
   setSettings: (s: CycleSettings) => void;
+
+  // cycle info helpers
   getDayInfo: (d: Date) => CycleDayInfo | undefined;
   getTodayStatus: (refDate?: Date) => TodayStatus;
   getTimeline: (refDate?: Date) => TimelineItem[];
@@ -62,6 +64,9 @@ type CycleContextValue = {
   addPeriodLog: (d: Date, period: PeriodLog) => void;
   addSexLog: (d: Date, sex: SexLog) => void;
   addSymptomsLog: (d: Date, symptoms: SymptomLog) => void;
+
+  // reset everything back to defaults
+  resetAll: () => void;
 };
 
 const CycleContext = createContext<CycleContextValue | undefined>(undefined);
@@ -193,6 +198,13 @@ export const CycleProvider: React.FC<{ children: ReactNode }> = ({
     }));
   }
 
+  // ======= reset helper =======
+
+  function resetAll() {
+    setSettings(initialSettings);
+    setDayLogs({});
+  }
+
   const value: CycleContextValue = {
     settings,
     setSettings,
@@ -206,6 +218,8 @@ export const CycleProvider: React.FC<{ children: ReactNode }> = ({
     addPeriodLog,
     addSexLog,
     addSymptomsLog,
+
+    resetAll,
   };
 
   return (
