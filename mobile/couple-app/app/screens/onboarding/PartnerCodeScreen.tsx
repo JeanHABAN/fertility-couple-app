@@ -1,78 +1,90 @@
-import React from "react";
+// app/screens/onboarding/PartnerCodeScreen.tsx
+import React, { useEffect } from "react";
 import { View, Text, StyleSheet } from "react-native";
-import { OnboardingLayout } from "../../components/layout/OnboardingLayout";
 import { useNavigation } from "@react-navigation/native";
-import type { NativeStackNavigationProp } from "@react-navigation/native-stack";
-import type { OnboardingStackParamList } from "../../navigation/OnboardingNavigator";
-import { colors } from "../../../lib/theme/colors";
-import { spacing } from "../../../lib/theme/spacing";
 
-type NavProp = NativeStackNavigationProp<
-  OnboardingStackParamList,
-  "PartnerCode"
->;
+import { ScreenContainer } from "../../components/layout/ScreenContainer";
+import { spacing } from "../../../lib/theme/spacing";
+import { colors } from "../../../lib/theme/colors";
+import { useProfile } from "../../../hooks/useProfile";
 
 export const PartnerCodeScreen: React.FC = () => {
-  const navigation = useNavigation<NavProp>();
+  // use any here so we can call getParent().replace("MainTabs")
+  const navigation = useNavigation<any>();
+  const { profile, ensurePartnerCode } = useProfile();
 
-  // later: real code from backend
-  const fakeCode = "AB3-F7Q";
+  // Make sure we have a code generated
+  useEffect(() => {
+    ensurePartnerCode();
+  }, [ensurePartnerCode]);
 
-  const finish = () => {
-  const parent = navigation.getParent();
-  if (parent) {
-    // TS doesn't know this is a stack, so we cast to any
-    (parent as any).navigate("MainTabs");
+  const code = profile.partnerCode ?? "•••-•••";
+
+  function handleFinish() {
+    // Finish onboarding and go to main app
+    navigation.getParent()?.replace("MainTabs");
   }
-};
 
   return (
-    <OnboardingLayout
-      step={7}
-      totalSteps={7}
-      title="Share this code with your partner"
-      subtitle="They can enter it in their app to link accounts."
-      onNext={finish}
-      onBack={() => navigation.goBack()}
-      nextLabel="Finish setup"
-    >
-      <View style={styles.center}>
-        <View style={styles.codeBox}>
-          <Text style={styles.codeText}>{fakeCode}</Text>
+    <ScreenContainer>
+      <View style={styles.root}>
+        <Text style={styles.title}>Share this code with your partner</Text>
+        <Text style={styles.subtitle}>
+          They can enter it in their app to link accounts (in a future
+          version). For now it’s just for you.
+        </Text>
+
+        <View style={styles.codeBadge}>
+          <Text style={styles.codeText}>{code}</Text>
         </View>
-        <Text style={styles.desc}>
-          This is just a preview. Later we’ll generate a real secure code from
-          the backend and let partners join.
+
+        <Text style={styles.footer} onPress={handleFinish}>
+          Done → Go to app
         </Text>
       </View>
-    </OnboardingLayout>
+    </ScreenContainer>
   );
 };
 
 const styles = StyleSheet.create({
-  center: {
+  root: {
     flex: 1,
     justifyContent: "center",
     alignItems: "center",
-    paddingHorizontal: spacing.md,
+    padding: spacing.lg,
   },
-  codeBox: {
-    paddingHorizontal: spacing.lg,
+  title: {
+    fontSize: 22,
+    fontWeight: "600",
+    color: colors.textMain,
+    textAlign: "center",
+    marginBottom: spacing.md,
+  },
+  subtitle: {
+    fontSize: 14,
+    color: colors.textSecondary,
+    textAlign: "center",
+    marginBottom: spacing.xl,
+  },
+  codeBadge: {
+    paddingHorizontal: spacing.xl,
     paddingVertical: spacing.md,
     borderRadius: 999,
     backgroundColor: colors.primaryLight,
-    marginBottom: spacing.md,
+    marginBottom: spacing.xl,
   },
   codeText: {
-    fontSize: 24,
+    fontSize: 22,
     fontWeight: "700",
     color: colors.primaryDark,
     letterSpacing: 2,
   },
-  desc: {
-    textAlign: "center",
-    fontSize: 13,
-    color: colors.textSecondary,
-    lineHeight: 20,
+  footer: {
+    marginTop: spacing.lg,
+    fontSize: 16,
+    color: colors.primary,
+    fontWeight: "600",
   },
 });
+
+export default PartnerCodeScreen;

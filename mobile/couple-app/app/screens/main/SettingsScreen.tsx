@@ -1,5 +1,3 @@
-
-
 import React from "react";
 import {
   View,
@@ -7,9 +5,13 @@ import {
   StyleSheet,
   TouchableOpacity,
   Alert,
+  ScrollView,
 } from "react-native";
+import { useNavigation } from "@react-navigation/native";
+
 import { ScreenContainer } from "../../components/layout/ScreenContainer";
 import { useCycle } from "../../../hooks/useCycle";
+import { useProfile } from "../../../hooks/useProfile";
 import { colors } from "../../../lib/theme/colors";
 import { spacing } from "../../../lib/theme/spacing";
 import type { CycleSettings, FertilityGoal } from "../../../app/types/cycle";
@@ -30,7 +32,6 @@ const GOAL_OPTIONS: {
     note: "Highlight your most fertile days.",
   },
   {
-    // 👇 IMPORTANT: this must match the type exactly
     value: "TRACK_ONLY",
     label: "Just tracking",
     note: "Learn your cycle patterns over time.",
@@ -38,7 +39,9 @@ const GOAL_OPTIONS: {
 ];
 
 export const SettingsScreen: React.FC = () => {
+  const navigation = useNavigation();
   const { settings, setSettings, resetAll } = useCycle();
+  const { profile } = useProfile(); // 👈 only read profile, no setName/setEmail
 
   function handleReset() {
     Alert.alert(
@@ -65,57 +68,87 @@ export const SettingsScreen: React.FC = () => {
 
   return (
     <ScreenContainer>
-      {/* Summary section */}
-      <View style={styles.section}>
-        <Text style={styles.title}>Your Settings</Text>
+      <ScrollView contentContainerStyle={styles.container}>
+        {/* Summary section */}
+        <View style={styles.section}>
+          <Text style={styles.title}>Your Settings</Text>
 
-        <Text style={styles.label}>Goal</Text>
-        <Text style={styles.value}>{readableGoal(settings.goal)}</Text>
+          {/* Optional: show profile info */}
+          {profile.name ? (
+            <>
+              <Text style={styles.label}>Name</Text>
+              <Text style={styles.value}>{profile.name}</Text>
+            </>
+          ) : null}
+          {profile.email ? (
+            <>
+              <Text style={styles.label}>Email</Text>
+              <Text style={styles.value}>{profile.email}</Text>
+            </>
+          ) : null}
 
-        <Text style={styles.label}>Cycle length</Text>
-        <Text style={styles.value}>{settings.cycleLength} days</Text>
+          <Text style={styles.label}>Goal</Text>
+          <Text style={styles.value}>{readableGoal(settings.goal)}</Text>
 
-        <Text style={styles.label}>Period length</Text>
-        <Text style={styles.value}>{settings.periodLength} days</Text>
+          <Text style={styles.label}>Cycle length</Text>
+          <Text style={styles.value}>{settings.cycleLength} days</Text>
 
-        <Text style={styles.label}>Luteal phase</Text>
-        <Text style={styles.value}>{settings.lutealPhaseLength} days</Text>
-      </View>
+          <Text style={styles.label}>Period length</Text>
+          <Text style={styles.value}>{settings.periodLength} days</Text>
 
-      {/* Editable goal chips */}
-      <View style={[styles.section, styles.goalSection]}>
-        <Text style={styles.subTitle}>Edit your goal</Text>
-        <Text style={styles.helperText}>
-          This helps the app decide how to highlight fertile days.
-        </Text>
+          <Text style={styles.label}>Luteal phase</Text>
+          <Text style={styles.value}>{settings.lutealPhaseLength} days</Text>
+        </View>
 
-        {GOAL_OPTIONS.map((opt) => (
-          <GoalChip
-            key={opt.value}
-            label={opt.label}
-            note={opt.note}
-            active={settings.goal === opt.value}
-            onPress={() => handleGoalChange(opt.value)}
-          />
-        ))}
-      </View>
+        {/* Editable goal chips */}
+        <View style={[styles.section, styles.goalSection]}>
+          <Text style={styles.subTitle}>Edit your goal</Text>
+          <Text style={styles.helperText}>
+            This helps the app decide how to highlight fertile days.
+          </Text>
 
-      {/* Reset button */}
-      <TouchableOpacity style={styles.resetBtn} onPress={handleReset}>
-        <Text style={styles.resetText}>Reset to Default</Text>
-      </TouchableOpacity>
+          {GOAL_OPTIONS.map((opt) => (
+            <GoalChip
+              key={opt.value}
+              label={opt.label}
+              note={opt.note}
+              active={settings.goal === opt.value}
+              onPress={() => handleGoalChange(opt.value)}
+            />
+          ))}
+        </View>
+
+        {/* Legal / Info */}
+        <View style={styles.section}>
+          <Text style={styles.subTitle}>Legal & About</Text>
+
+          <TouchableOpacity
+            style={styles.linkItem}
+            onPress={() => navigation.navigate("PrivacyPolicy" as never)}
+          >
+            <Text style={styles.linkText}>Privacy Policy</Text>
+          </TouchableOpacity>
+        </View>
+
+        {/* Reset button */}
+        <TouchableOpacity style={styles.resetBtn} onPress={handleReset}>
+          <Text style={styles.resetText}>Reset to Default</Text>
+        </TouchableOpacity>
+
+        <View style={{ height: spacing.lg }} />
+      </ScrollView>
     </ScreenContainer>
   );
 };
 
-// small helper to show a nicer text for the current goal
+// helper to show nicer goal text
 function readableGoal(goal: CycleSettings["goal"]): string {
   switch (goal) {
     case "AVOID_PREGNANCY":
       return "Avoid pregnancy";
     case "TRY_TO_CONCEIVE":
       return "Trying to conceive";
-    case "TRACK_ONLY": // 👈 match the type exactly
+    case "TRACK_ONLY":
     default:
       return "Just tracking";
   }
@@ -145,6 +178,10 @@ const GoalChip: React.FC<GoalChipProps> = ({ label, note, active, onPress }) => 
 };
 
 const styles = StyleSheet.create({
+  container: {
+    padding: spacing.lg,
+    paddingBottom: spacing.xl,
+  },
   section: {
     marginTop: spacing.lg,
   },
@@ -219,6 +256,13 @@ const styles = StyleSheet.create({
     color: "white",
     fontSize: 16,
     fontWeight: "600",
+  },
+  linkItem: {
+    paddingVertical: 10,
+  },
+  linkText: {
+    fontSize: 15,
+    color: colors.primary,
   },
 });
 

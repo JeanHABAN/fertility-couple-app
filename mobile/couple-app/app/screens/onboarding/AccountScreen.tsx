@@ -1,68 +1,114 @@
-import React from "react";
-import { View, Text, TextInput, StyleSheet } from "react-native";
-import { OnboardingLayout } from "../../components/layout/OnboardingLayout";
+// app/screens/onboarding/AccountScreen.tsx
+import React, { useState } from "react";
+import {
+  View,
+  Text,
+  TextInput,
+  StyleSheet,
+  KeyboardAvoidingView,
+  Platform,
+} from "react-native";
 import { useNavigation } from "@react-navigation/native";
 import type { NativeStackNavigationProp } from "@react-navigation/native-stack";
-import type { OnboardingStackParamList } from "../../navigation/OnboardingNavigator";
-import { colors } from "../../../lib/theme/colors";
+
+import { ScreenContainer } from "../../components/layout/ScreenContainer";
 import { spacing } from "../../../lib/theme/spacing";
+import { colors } from "../../../lib/theme/colors";
+import { useProfile } from "../../../hooks/useProfile";
+import type { OnboardingStackParamList } from "../../navigation/OnboardingNavigator";
 
 type NavProp = NativeStackNavigationProp<OnboardingStackParamList, "Account">;
 
 export const AccountScreen: React.FC = () => {
   const navigation = useNavigation<NavProp>();
+  const { profile, updateProfile } = useProfile();
+
+  const [name, setName] = useState<string>(profile.name ?? "");
+  const [email, setEmail] = useState<string>(profile.email ?? "");
+
+  function handleNext() {
+    updateProfile({
+      name: name.trim(),
+      email: email.trim() || undefined,
+    });
+
+    navigation.navigate("PartnerInvite");
+  }
 
   return (
-    <OnboardingLayout
-      step={5}
-      totalSteps={7}
-      title="Create your profile"
-      subtitle="This helps save your data across devices later."
-      onNext={() => navigation.navigate("PartnerInvite")}
-      onBack={() => navigation.goBack()}
-    >
-      <View style={styles.form}>
-        <View style={styles.field}>
+    <ScreenContainer>
+      <KeyboardAvoidingView
+        behavior={Platform.OS === "ios" ? "padding" : undefined}
+        style={{ flex: 1 }}
+      >
+        <View style={{ padding: spacing.lg }}>
+          <Text style={styles.title}>Create your profile</Text>
+
           <Text style={styles.label}>Your name</Text>
           <TextInput
+            value={name}
+            onChangeText={setName}
             placeholder="First name"
             style={styles.input}
-            placeholderTextColor="#B99FBA"
           />
-        </View>
 
-        <View style={styles.field}>
           <Text style={styles.label}>Email (optional)</Text>
           <TextInput
+            value={email}
+            onChangeText={setEmail}
             placeholder="email@example.com"
-            keyboardType="email-address"
             style={styles.input}
-            placeholderTextColor="#B99FBA"
+            keyboardType="email-address"
           />
+
+          <Text style={styles.helper}>
+            We only store this locally on your device. No account is created.
+          </Text>
+
+          <View style={{ height: spacing.lg }} />
+
+          <Text style={styles.next} onPress={handleNext}>
+            Next →
+          </Text>
         </View>
-      </View>
-    </OnboardingLayout>
+      </KeyboardAvoidingView>
+    </ScreenContainer>
   );
 };
 
 const styles = StyleSheet.create({
-  form: {
-    paddingTop: spacing.md,
-    gap: spacing.md,
+  title: {
+    fontSize: 22,
+    fontWeight: "600",
+    color: colors.textMain,
+    marginBottom: spacing.lg,
   },
-  field: {},
   label: {
     fontSize: 14,
-    color: colors.textMain,
+    fontWeight: "600",
+    color: colors.textSecondary,
+    marginTop: spacing.md,
     marginBottom: 4,
   },
   input: {
-    borderRadius: 999,
+    borderRadius: 12,
     borderWidth: 1,
-    borderColor: "#F0D9ED",
+    borderColor: "#E4D3EB",
     paddingHorizontal: spacing.md,
     paddingVertical: 10,
-    backgroundColor: "#FFF",
-    color: colors.textMain,
+    backgroundColor: "white",
+  },
+  helper: {
+    marginTop: spacing.md,
+    fontSize: 12,
+    color: colors.textSecondary,
+  },
+  next: {
+    marginTop: spacing.lg,
+    fontSize: 16,
+    color: colors.primary,
+    fontWeight: "600",
   },
 });
+
+export default AccountScreen;

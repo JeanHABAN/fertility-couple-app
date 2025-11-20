@@ -19,6 +19,7 @@ import { useCycle } from "../../../hooks/useCycle";
 import { LogPeriodModal } from "../../components/modals/LogPeriodModal";
 import { LogSexModal } from "../../components/modals/LogSexModal";
 import { LogSymptomsModal } from "../../components/modals/LogSymptomsModal";
+import { useProfile } from "../../../hooks/useProfile"; 
 
 export const HomeScreen: React.FC = () => {
   const {
@@ -29,7 +30,8 @@ export const HomeScreen: React.FC = () => {
     addSymptomsLog,
   } = useCycle();
 
-  const userName = "Jean";
+  const { profile } = useProfile();
+  const userName = profile.name || "Friend";
   const today = new Date();
 
   const todayStatus = getTodayStatus();

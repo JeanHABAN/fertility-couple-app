@@ -3,8 +3,10 @@ import React, {
   useContext,
   useMemo,
   useState,
+  useEffect,
   ReactNode,
 } from "react";
+import AsyncStorage from "@react-native-async-storage/async-storage";
 
 import type {
   CycleDayInfo,
@@ -22,7 +24,11 @@ import type { DayLog, PeriodLog, SexLog, SymptomLog } from "../app/types/logs";
 const toIso = (d: Date) => d.toISOString().slice(0, 10);
 const today = new Date();
 
-// Default settings – will be overridden by onboarding
+// AsyncStorage keys (local-only)
+const SETTINGS_KEY = "fcouple:cycleSettings:v1";
+const LOGS_KEY = "fcouple:dayLogs:v1";
+
+// Default settings – used on first start and for reset
 const initialSettings: CycleSettings = {
   lastPeriodStart: toIso(
     new Date(today.getFullYear(), today.getMonth(), today.getDate() - 14)
@@ -30,7 +36,7 @@ const initialSettings: CycleSettings = {
   cycleLength: 28,
   periodLength: 5,
   lutealPhaseLength: 14,
-  goal: "AVOID_PREGNANCY", // 👈 default
+  goal: "AVOID_PREGNANCY",
 };
 
 export type TodayStatus = {
@@ -65,7 +71,7 @@ type CycleContextValue = {
   addSexLog: (d: Date, sex: SexLog) => void;
   addSymptomsLog: (d: Date, symptoms: SymptomLog) => void;
 
-  // reset everything back to defaults
+  // reset everything back to defaults (and clear storage)
   resetAll: () => void;
 };
 
@@ -75,9 +81,55 @@ export const CycleProvider: React.FC<{ children: ReactNode }> = ({
   children,
 }) => {
   const [settings, setSettings] = useState<CycleSettings>(initialSettings);
-
-  // logs: date ISO -> DayLog
   const [dayLogs, setDayLogs] = useState<Record<string, DayLog>>({});
+  const [hydrated, setHydrated] = useState(false); // to avoid flicker
+
+  // ========= HYDRATE FROM ASYNCSTORAGE ONCE =========
+  useEffect(() => {
+    (async () => {
+      try {
+        const [settingsRaw, logsRaw] = await Promise.all([
+          AsyncStorage.getItem(SETTINGS_KEY),
+          AsyncStorage.getItem(LOGS_KEY),
+        ]);
+
+        if (settingsRaw) {
+          const parsed = JSON.parse(settingsRaw);
+          setSettings((prev) => ({
+            ...prev,
+            ...parsed,
+          }));
+        }
+
+        if (logsRaw) {
+          const parsedLogs = JSON.parse(logsRaw);
+          if (parsedLogs && typeof parsedLogs === "object") {
+            setDayLogs(parsedLogs);
+          }
+        }
+      } catch (e) {
+        console.warn("[useCycle] Failed to load from storage", e);
+      } finally {
+        setHydrated(true);
+      }
+    })();
+  }, []);
+
+  // ========= PERSIST TO ASYNCSTORAGE =========
+
+  useEffect(() => {
+    if (!hydrated) return;
+    AsyncStorage.setItem(SETTINGS_KEY, JSON.stringify(settings)).catch((e) =>
+      console.warn("[useCycle] Failed to save settings", e)
+    );
+  }, [settings, hydrated]);
+
+  useEffect(() => {
+    if (!hydrated) return;
+    AsyncStorage.setItem(LOGS_KEY, JSON.stringify(dayLogs)).catch((e) =>
+      console.warn("[useCycle] Failed to save logs", e)
+    );
+  }, [dayLogs, hydrated]);
 
   // ======= cycle days computation =======
 
@@ -198,11 +250,14 @@ export const CycleProvider: React.FC<{ children: ReactNode }> = ({
     }));
   }
 
-  // ======= reset helper =======
-
-  function resetAll() {
-    setSettings(initialSettings);
-    setDayLogs({});
+  async function resetAll() {
+    try {
+      setSettings(initialSettings);
+      setDayLogs({});
+      await AsyncStorage.multiRemove([SETTINGS_KEY, LOGS_KEY]);
+    } catch (e) {
+      console.warn("[useCycle] Failed to reset", e);
+    }
   }
 
   const value: CycleContextValue = {
