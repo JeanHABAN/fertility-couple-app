@@ -75,22 +75,7 @@ Reset all data
 
 Simple chip-based selection UI
 
-🧱 Monorepo Structure
-FERTILITY-COUPLE-APP/
-│
-├── backend/                # Future API (planned)
-├── mobile/                 # Expo + React Native app
-│   ├── app/
-│   │   ├── components/
-│   │   ├── hooks/
-│   │   ├── lib/
-│   │   ├── navigation/
-│   │   ├── screens/
-│   │   └── types/
-│   ├── package.json
-│   └── App.tsx
-│
-└── docs/                   # Diagrams, notes, product planning
+
 
 🛠 Tech Stack
 Mobile
